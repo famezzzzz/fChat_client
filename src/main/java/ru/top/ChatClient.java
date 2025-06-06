@@ -30,10 +30,10 @@ public class ChatClient {
         while (true){
             try {
                 Scanner scanner = new Scanner(System.in);
-                System.out.println("1. Register users\n" +
-                        "2. POST Login\n" +
+                System.out.println("POST register users\n" +
+                        "2. POST login\n" +
                         "3. GET user details\n" +
-                        "4. POST Create group\n" +
+                        "4. POST create group\n" +
                         "5. POST group message by sender\n" +
                         "6. GET group messages\n" +
                         "7. POST private message to receiver\n" +
@@ -41,8 +41,9 @@ public class ChatClient {
                         "9. POST private message to sender\n" +
                         "10. GET private messages by sender\n" +
                         "11. GET chat history\n" +
-                        "12. GET Search messages\n" +
-                        "13. GET Count users");
+                        "12. GET search messages\n" +
+                        "13. GET count users" +
+                        "14. GET current user info");
                 int choice = scanner.nextInt();
                 switch (choice) {
                     case 1:
@@ -145,6 +146,13 @@ public class ChatClient {
                         System.out.println("Private Messages: " + userCount);
                         break;
 
+                    case 14:
+                        // Current user info
+                        System.out.println("Fetching" + senderId + "details...");
+                        String myDetails = getMyDetails(senderJwtToken);
+                        System.out.println("User Details: " + myDetails);
+                        break;
+
                     default:
                         throw new IllegalStateException("Unexpected value: " + choice);
                 }
@@ -213,6 +221,23 @@ public class ChatClient {
     private static String getUserDetails(String userId, String jwtToken) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + "/api/users/" + userId))
+                .header("Authorization", "Bearer " + jwtToken)
+                .header("Content-Type", "application/json")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else {
+            JSONObject errorJson = new JSONObject(response.body());
+            throw new Exception("Failed to fetch user details: " + errorJson.getString("error"));
+        }
+    }
+
+    private static String getMyDetails(String jwtToken) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/api/users/myInfo"))
                 .header("Authorization", "Bearer " + jwtToken)
                 .header("Content-Type", "application/json")
                 .GET()
